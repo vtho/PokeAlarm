@@ -19,12 +19,12 @@ from utils import *
 
 class Alarm_Manager(Thread):
 
-	def __init__(self, queue):
+	def __init__(self, queue, config):
 		#Intialize as Thread
 		super(Alarm_Manager, self).__init__()
 		#Import settings from Alarms.json
 		filepath = config['ROOT_PATH']
-		with open(os.path.join(filepath, 'alarms.json')) as file:
+		with open(os.path.join(filepath, config['CONFIG_FILE'])) as file:
 			settings = json.load(file)
 			alarm_settings = settings["alarms"]
 			self.notify_list = make_notify_list(settings["pokemon"])
@@ -55,8 +55,8 @@ class Alarm_Manager(Thread):
 						log.info("Alarm type not found: " + alarm['type'])
 				else:
 					log.info("Alarm not activated: " + alarm['type'] + " because value not set to \"True\"")
-	
-	#Threaded loop to process request data from the queue 
+
+	#Threaded loop to process request data from the queue
 	def run(self):
 		log.info("PokeAlarm has started! Your alarms should trigger now.")
 		while True:
@@ -70,13 +70,13 @@ class Alarm_Manager(Thread):
 					log.debug("Request processed for #%s" % data['message']['pokemon_id'])
 					if data['message']['encounter_id'] not in self.seen:
 						self.trigger_pkmn(data['message'])
-				elif data['type'] == 'pokestop' : 
+				elif data['type'] == 'pokestop' :
 					log.debug("Pokestop notifications not yet implimented.")
 				elif data['type'] == 'pokegym' :
 					log.debug("Pokegym notifications not yet implimented.")
 			log.debug("Cleaning up 'seen' set...")
 			self.clear_stale();
-			
+
 	#Send a notification to alarms about a found pokemon
 	def trigger_pkmn(self, pkmn):
 		#Mark the pokemon as seen along with exipre time
@@ -84,12 +84,12 @@ class Alarm_Manager(Thread):
 		self.seen[pkmn['encounter_id']] = dissapear_time
 		pkmn_id = pkmn['pokemon_id']
 		name = get_pkmn_name(pkmn_id)
-		
+
 		#Check if the Pokemon has already expired
 		if dissapear_time < datetime.utcnow() :
 			log.info(name + " ignore: time_left has passed.")
 			return
-		
+
 		#Check if Pokemon is on the notify list
 		if pkmn_id not in self.notify_list:
 			log.info(name + " ignored: notify not enabled.")
@@ -104,7 +104,7 @@ class Alarm_Manager(Thread):
 			log.info(dist)
 			log.info(self.notify_list[pkmn_id])
 			return
-        
+
 		#Check if the Pokemon is in the geofence
 		if 'GEOFENCE' in config and not config['GEOFENCE'].contains(lat,lng):
 			log.info(name + " ignored: outside geofence")
@@ -126,20 +126,20 @@ class Alarm_Manager(Thread):
 			'12h_time': timestamps[1],
 			'24h_time': timestamps[2],
 			'dir': get_dir(lat,lng)
-			
+
 		}
-		
+
 		for alarm in self.alarms:
 			alarm.pokemon_alert(pkinfo)
 
 	#Send a notication about pokemon lure found
 	def notify_lures(self, lures):
 		raise NotImplementedError("This method is not yet implimented.")
-	
+
 	#Send a notifcation about pokemon gym detected
 	def notify_gyms(self, gyms):
 		raise NotImplementedError("This method is not yet implimented.")
-		
+
 	#clear expired pokemon so that the seen set is not too large
 	def clear_stale(self):
 		old = []

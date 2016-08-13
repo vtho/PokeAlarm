@@ -36,7 +36,7 @@ def trigger_alert():
 if __name__ == '__main__':
 	#Parse arguments and set up config
 	config = set_config(os.path.abspath(os.path.dirname(__file__)))
-	
+
 	#Debug options
 	if config['DEBUG']:
 		log.info("Debug mode activated!")
@@ -49,11 +49,11 @@ if __name__ == '__main__':
 		logging.getLogger('requests').setLevel(logging.WARNING)
 		logging.getLogger('alarms').setLevel(logging.INFO)
 		logging.getLogger('pywsgi').setLevel(logging.WARNING)
-	
+
 	#Start up Alarm_Manager
-	alarm_thread = Alarm_Manager(data_queue)
+	alarm_thread = Alarm_Manager(data_queue, config)
 	alarm_thread.start()
-	
+
 	#Start up Server
 	log.info("Webhook server running on http://%s:%s" % (config['HOST'], config['PORT']))
 	server = wsgi.WSGIServer((config['HOST'], config['PORT']), app, log=logging.getLogger('pywsgi'))
